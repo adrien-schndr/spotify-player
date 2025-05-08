@@ -27,7 +27,8 @@ npm i query-string
 <details>
 <summary>Click here to see if you configured properly</summary>
 
-You should see on your server's website:
+> You should get something like this:
+
 ```json
 {
     "duration_ms":165303,
