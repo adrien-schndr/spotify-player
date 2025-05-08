@@ -30,7 +30,6 @@ async function fetchData() {
             progressBar.style.width = `${percent}%`;
         }
 
-
         const progressText = document.getElementById('progress-text');
         const minutes = Math.floor(data.progress_ms / 60000);
         const seconds = Math.floor((data.progress_ms % 60000) / 1000);
