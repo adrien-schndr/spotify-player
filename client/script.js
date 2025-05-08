@@ -24,9 +24,12 @@ async function fetchData() {
             }
         });
 
-        const progressBar = document.getElementById('progress-bar');
-        progressBar.max = data.duration_ms;
-        progressBar.value = data.progress_ms;
+        const progressBar = document.getElementById('custom-progress');
+        if (data.duration_ms > 0) {
+            const percent = (data.progress_ms / data.duration_ms) * 100;
+            progressBar.style.width = `${percent}%`;
+        }
+
 
         const progressText = document.getElementById('progress-text');
         const minutes = Math.floor(data.progress_ms / 60000);
