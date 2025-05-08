@@ -1,5 +1,9 @@
 ![alt text](doc/images/cover.png)
 ***
+- [❇️ Spotify player/widget](https://github.com/adrien-schndr/spotify-player?tab=readme-ov-file#%EF%B8%8F-spotify-playerwidget)
+- [📦 Dependencies](https://github.com/adrien-schndr/spotify-player?tab=readme-ov-file#-dependencies)
+- [🖥️ Installation](https://github.com/adrien-schndr/spotify-player?tab=readme-ov-file#%EF%B8%8F-installation)
+***
 # ❇️ Spotify player/widget
 ### Why?
 As often, I couldn't sleep so I thought about a webpage where I can see what I'm currently listening (which is kind of idiot), and then I remembered that my parents were curious about what I'm listening far from their home. That's why I made this, so that they can sometimes go to a self-hosted webpage and see what I'm listening to.
@@ -9,7 +13,6 @@ This is a two-in-one project:
 - **Back-end part:** the code running on a server that sends API requests to Spotify and process the data. (TypeScript)
 ***
 # 📦 Dependencies
-## 📡 Back-end part
 
 You must run the `server.tsx` with [Deno](https://deno.com/) after installing [query-string](https://www.npmjs.com/package/query-string) with the following command:
 ```bash
