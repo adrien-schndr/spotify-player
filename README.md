@@ -23,7 +23,7 @@ npm i query-string
 2. Go to [Spotify for Developpers](https://developer.spotify.com/dashboard), connect your account and create an app.
 3. Store your credentials into a Environment variable file (see `.env` file: [/server/.env](/server/.env)). These credentials are on the dashboard of your all new Spotify app.
 > [!NOTE]
-> If properly configured, play some music on Spotify and go toyour HTTP with its URL. You should land on a page showing a JSON dictionnary showing you informations about your currently listening track
+> If properly configured, play some music on Spotify and go to your HTTP server with its URL. You should land on a page showing a JSON dictionnary showing you informations about your currently listening track
 <details>
 <summary>Click here to see if you configured properly</summary>
 
