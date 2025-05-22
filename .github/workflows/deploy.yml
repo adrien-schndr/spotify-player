@@ -26,6 +26,8 @@ jobs:
 
       - name: Build project
         run: npm run build
+        env:
+          VITE_SPOTIFY_TOKEN_API_URL: ${{ secrets.VITE_SPOTIFY_TOKEN_API_URL }}
 
       - name: Upload production-ready build files
         uses: actions/upload-artifact@v4
