@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { styled } from '@mui/material/styles';
 
 import {
@@ -12,13 +13,16 @@ import {
   IconButton,
   Stack,
   Fab,
-  linearProgressClasses 
+  linearProgressClasses,
+  TextField,
+  Link
 } from '@mui/material';
 import {
   PlayArrow,
   Pause,
   SkipPrevious,
   SkipNext,
+  Send,
 } from '@mui/icons-material';
 
 const spotifyM3Theme = createTheme({
@@ -83,36 +87,38 @@ const App = () => {
   const [currentSong, setCurrentSong] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
+  const [inputValue, setInputValue] = useState<string>('');
+  const [isMatchFound, setIsMatchFound] = useState<boolean>(false);
 
   const pollingIntervalRef = useRef<number | null>(null);
 
   const fetchAccessToken = async () => {
     setIsAuthLoading(true);
-    setMessage('Obtaining Spotify Access Token...');
+    setMessage('> ⏳ LOADING: Obtaining Spotify Access Token...');
     try {
       const valTownApiUrl = import.meta.env.VITE_SPOTIFY_TOKEN_API_URL;
 
       if (!valTownApiUrl) {
-        throw new Error("Spotify Token API URL is not defined. Please check your .env file and ensure it uses VITE_ prefix.");
+        throw new Error("> ❌ ERROR: Spotify Token API URL is not defined. Please check your .env file and ensure it uses VITE_ prefix.");
       }
 
       const response = await fetch(valTownApiUrl);
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`Error fetching access token: ${response.status} - ${errorData.error?.message || response.statusText}`);
+        throw new Error(`> ❌ ERROR: Failed fetching access token: ${response.status} - ${errorData.error?.message || response.statusText}`);
       }
 
       const data = await response.json();
       if (data.access_token) {
         setAccessToken(data.access_token);
-        setMessage('Access Token obtained successfully!');
+        setMessage('> ✅ SUCCESS: Access Token obtained successfully!');
       } else {
-        throw new Error('Access token not found in response from Val Town.');
+        throw new Error('> ❌ ERROR: Access token not found in response from Val Town.');
       }
     } catch (error: any) {
-      console.error('Error fetching access token:', error);
-      setMessage(`Failed to obtain access token: ${error.message}. Please ensure your Val Town API is running and configured correctly.`);
+      console.error('> ❌ ERROR: Failed fetching access token:', error);
+      setMessage(`> ❌ ERROR: Failed to obtain access token: ${error.message}. Please ensure your Val Town API is running and configured correctly.`);
     } finally {
       setIsAuthLoading(false);
     }
@@ -125,7 +131,7 @@ const App = () => {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
       }
-      setMessage('Access token is not available. Please obtain it first.');
+      setMessage('> ❌ ERROR: Access token is not available. Please obtain it first.');
       return;
     }
 
@@ -140,25 +146,25 @@ const App = () => {
         setCurrentSong(null);
         
         if (!message.startsWith('Failed to')) {
-          setMessage('No song is currently playing.');
+          setMessage('> ℹ️ INFO: No song is currently playing.');
         }
         return;
       }
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`Error fetching current song: ${response.status} - ${errorData.error?.message || response.statusText}`);
+        throw new Error(`> ❌ ERROR: Error fetching current song: ${response.status} - ${errorData.error?.message || response.statusText}`);
       }
 
       const data = await response.json();
       setCurrentSong(data);
 
-      if (message === 'No song is currently playing.' || message === 'Fetching current song...') {
+      if (message === '> ℹ️ INFO: No song is currently playing.' || message === '> ⏳ LOADING: Fetching current song...') {
         setMessage('');
       }
     } catch (error: any) {
-      console.error('Error fetching current playing song:', error);
-      setMessage(`Failed to fetch current song: ${error.message}. Make sure your token is valid and a song is playing on an active device.`);
+      console.error('> ❌ ERROR: Failed to fetch current playing song:', error);
+      setMessage(`> ❌ ERROR: Failed to fetch current song: ${error.message}. Make sure your token is valid and a song is playing on an active device.`);
 
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
@@ -170,11 +176,11 @@ const App = () => {
 
   const sendPlayerCommand = async (endpoint: string, method: 'PUT' | 'POST') => {
     if (!accessToken) {
-      setMessage('Access token is not available. Cannot send command.');
+      setMessage('> ❌ ERROR: Access token is not available. Cannot send command.');
       return;
     }
     setIsLoading(true);
-    setMessage(`Sending command to Spotify player...`);
+    setMessage(`> ⏳ LOADING: Sending command to Spotify player...`);
     try {
       const response = await fetch(`https://api.spotify.com/v1/me/player/${endpoint}`, {
         method: method,
@@ -184,19 +190,19 @@ const App = () => {
       });
 
       if (response.status === 204) {
-        setMessage(`Command "${endpoint}" sent successfully!`);
+        setMessage(`> ✅ SUCCESS: Command "${endpoint}" sent successfully!`);
         
         fetchCurrentPlaying();
       } else if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`Error with command "${endpoint}": ${response.status} - ${errorData.error?.message || response.statusText}`);
+        throw new Error(`> ❌ ERROR: with command "${endpoint}": ${response.status} - ${errorData.error?.message || response.statusText}`);
       } else {
-         setMessage(`Command "${endpoint}" sent successfully!`);
+         setMessage(`> ✅ SUCCESS: Command "${endpoint}" sent successfully!`);
          fetchCurrentPlaying();
       }
     } catch (error: any) {
-      console.error(`Error sending command to Spotify player (${endpoint}):`, error);
-      setMessage(`Failed to send command: ${error.message}. Ensure an active device is available and connected to Spotify.`);
+      console.error(`> ❌ ERROR: Failed to send command to Spotify player (${endpoint}):`, error);
+      setMessage(`> ❌ ERROR: Failed to send command: ${error.message}. Ensure an active device is available and connected to Spotify.`);
     } finally {
       setIsLoading(false);
     }
@@ -233,10 +239,25 @@ const App = () => {
     };
   }, [accessToken]);
 
-
-  const handleNext = () => sendPlayerCommand('next', 'POST');
-  const handlePrevious = () => sendPlayerCommand('previous', 'POST');
-    const handlePlayPauseToggle = () => {
+  const handleNext = () => {
+    if (!isMatchFound) {
+      setMessage("> ❌ ERROR: You are not authenticated.");
+      return;
+    }
+    sendPlayerCommand('next', 'POST');
+  };
+  const handlePrevious = () => {
+    if (!isMatchFound) {
+      setMessage("> ❌ ERROR: You are not authenticated.");
+      return;
+    }
+    sendPlayerCommand('previous', 'POST');
+  };
+  const handlePlayPauseToggle = () => {
+    if (!isMatchFound) {
+      setMessage("> ❌ ERROR: You are not authenticated.");
+      return;
+    }
     if (currentSong && currentSong.is_playing) {
       sendPlayerCommand('pause', 'PUT');
     } else {
@@ -249,6 +270,22 @@ const App = () => {
     const seconds = Math.floor((timestamp_ms % 60000) / 1000);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
+
+  const expectedEnvValue = import.meta.env.VITE_PASSWORD;
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(event.target.value);
+  };
+
+  const handleCheck = () => {
+    if (inputValue === expectedEnvValue) {
+      setMessage('> ✅ SUCCESS: Correct password! Now authenticated!');
+      setIsMatchFound(true);
+    } else {
+      setMessage('> ❌ ERROR: Wrong password.');
+      setIsMatchFound(false);
+    }
+  };
 
   const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
   height: 15,
@@ -306,14 +343,14 @@ const App = () => {
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', py: 4 }}>
               <CircularProgress sx={{ color: 'primary.main' }} />
               <Typography variant="body1" sx={{ mt: 2, color: 'text.secondary' }}>
-                {message || 'Loading Spotify Access Token...'}
+                {message || '> ⏳ LOADING: Authentication to Spotify...'}
               </Typography>
             </Box>
           ) : (
             <>
               {!accessToken ? (
                 <Typography variant="body1" color="error" sx={{ mb: 2 }}>
-                  {message || 'Failed to get access token. Please check your Val Town API and network connection.'}
+                  {message || '> ❌ ERROR: Failed to get access token. Please check your Val Town API and network connection.'}
                 </Typography>
               ) : (
                 <>
@@ -357,17 +394,34 @@ const App = () => {
                             width: { xs: '100%', sm: 'auto' },
                           }}
                         >
-                          <Typography variant="h6" sx={{ mt: 1, color: 'primary.main', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                          <Link href={currentSong.item.album.external_urls.spotify} underline="hover" variant="h6" sx={{ mt: 1, color: 'primary.main', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                             {currentSong.item.name}
-                          </Typography>
-                          <Typography variant="body1" sx={{ color: 'text.secondary', fontSize: { xs: '0.95rem', sm: '1.125rem' } }}>
-                            {currentSong.item.artists.map((artist: any) => artist.name).join(', ')}
+                          </Link>
+                          <Typography
+                            variant="body1"
+                            sx={{ color: 'text.secondary', fontSize: { xs: '0.95rem', sm: '1.125rem' } }}
+                          >
+                            {currentSong.item.artists.map((artist: any, index: number) => (
+                              <React.Fragment key={artist.id || artist.name || index}>
+                                <Link
+                                  href={artist.external_urls?.spotify}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  color="inherit"
+                                  underline="hover"
+                                >
+                                  {artist.name}
+                                </Link>
+                                {/* Add a comma and space only if it's not the last artist */}
+                                {index < currentSong.item.artists.length - 1 && ', '}
+                              </React.Fragment>
+                            ))}
                           </Typography>
                         </Box>
                       </Box>
                     ) : (
                       <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                        {isLoading ? 'Loading song information...' : 'No song information available. Is Spotify playing?'}
+                        {isLoading ? '> ⏳ LOADING: Fetching song information...' : '> ❌ ERROR: No song information available. Is Spotify playing?'}
                       </Typography>
                     )}
                   </Box>
@@ -379,7 +433,7 @@ const App = () => {
                       {isLoading ? '' : `${progressText(currentSong?.progress_ms)}`}
                     </Typography>
                     <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
-                      {isLoading ? 'Loading song information...' : `/`}
+                      {isLoading ? '> ⏳ LOADING: Fetching song information...' : `/`}
                     </Typography>
                     <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
                       {isLoading ? '' : `${progressText(currentSong?.item.duration_ms)}`}
@@ -407,12 +461,26 @@ const App = () => {
             </>
           )}
 
-          {/* ---------- 🖥️ CONSOLE OUTPUT ---------- */}
-          {message && (
-            <Box sx={{ mt: 2, p: 1.5, borderRadius: 6, bgcolor: 'background.default', color: '#FFFFFF'}}>
-              {message}
-            </Box>
-          )}
+          {/* ---------- 🖥️ CONSOLE ---------- */}
+          <Box sx={{ mb: 3 }}>
+            {message && (
+              <Box sx={{ mt: 2, p: 1.5, borderRadius: 6, bgcolor: 'background.default', color: '#FFFFFF', alignItems: 'flex-start', display: 'flex', flexDirection: 'row', fontFamily: 'monospace',}}>
+                {message}
+              </Box>
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%', margin: '0 auto' }}>
+            <TextField label="Authentication Password" variant="outlined" type="password" value={inputValue} onChange={handleChange} className="rounded-md" sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 10
+                },
+                flexGrow: 1
+              }}
+            />
+            <Fab color="primary" size="large" onClick={handleCheck}>
+              <Send fontSize="large" />
+            </Fab>
+          </Box>
         </Box>
       </Box>
     </ThemeProvider>
