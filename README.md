@@ -48,7 +48,7 @@ This Val Town function will securely retrieve your Spotify access token using yo
     - Go to Val Town and log in.
     - Click on "New Val".
 2. **Paste Backend Code:**
-    - Copy the code from the [web.tsx](https://github.com/adrien-schndr/spotify-player/blob/main/src/web.ts) file.
+    - Copy the code from the [web.tsx](https://github.com/adrien-schndr/spotify-player/blob/main/src/web.tsx) file.
     - Paste it into your new Val.
 3. **Set Val Type to HTTP:**
     - In the Val Town dashboard for this Val, ensure its type is set to **HTTP**.

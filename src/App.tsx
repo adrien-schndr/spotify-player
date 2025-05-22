@@ -295,7 +295,6 @@ const App = () => {
             textAlign: 'center',
             border: '1px solid',
             borderColor: 'divider',
-            boxShadow: '0 0 15px rgba(94,56,106, 0.5)',
             transition: 'box-shadow 0.3s ease',
             '&:hover': {
               boxShadow: '0 0 30px rgba(94,56,106, 0.7)',

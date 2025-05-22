@@ -20,6 +20,10 @@ jobs:
       - name: Install dependencies
         uses: bahmutov/npm-install@v1
 
+      - name: Remove 'web.tsx' from source before build
+        run: rm -f ./src/web.tsx
+        working-directory: ${{ github.workspace }}
+
       - name: Build project
         run: npm run build
 
