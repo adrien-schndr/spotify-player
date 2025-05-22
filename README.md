@@ -86,6 +86,12 @@ This is your React application that will interact with your Val Town backend and
       ```
       **Replace** `https://<your-username>.val.town/<your-val-name>` with the actual URL you noted from Val Town.
     - **Important:** Add `.env` to your `.gitignore` file to prevent it from being committed to version control.
+4. ⚠️ **RECOMMANDED Add your own password:**
+    - If you want to publish, add a password to your `.env` file. It will prevent visitors to modifiy your playing sessions. (You don't want people to pause your music)
+      ```
+      VITE_PASSWORD=<YOUR SUPER PASSWORD>
+      ```
+    - By default, the app is supposed to be self-hosted so you are the only one who can control it. 
 
 ## ▶️ Running the Application
 

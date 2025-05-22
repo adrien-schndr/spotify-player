@@ -89,6 +89,8 @@ const App = () => {
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [inputValue, setInputValue] = useState<string>('');
   const [isMatchFound, setIsMatchFound] = useState<boolean>(false);
+  const expectedEnvValue = import.meta.env.VITE_PASSWORD;
+  const isSecured = (undefined !== expectedEnvValue);
 
   const pollingIntervalRef = useRef<number | null>(null);
 
@@ -240,28 +242,29 @@ const App = () => {
   }, [accessToken]);
 
   const handleNext = () => {
-    if (!isMatchFound) {
+    if (!isMatchFound && isSecured) {
       setMessage("> ❌ ERROR: You are not authenticated.");
       return;
     }
     sendPlayerCommand('next', 'POST');
   };
   const handlePrevious = () => {
-    if (!isMatchFound) {
+    if (!isMatchFound && isSecured) {
       setMessage("> ❌ ERROR: You are not authenticated.");
       return;
     }
     sendPlayerCommand('previous', 'POST');
   };
   const handlePlayPauseToggle = () => {
-    if (!isMatchFound) {
+    if (!isMatchFound && isSecured) {
       setMessage("> ❌ ERROR: You are not authenticated.");
       return;
-    }
-    if (currentSong && currentSong.is_playing) {
-      sendPlayerCommand('pause', 'PUT');
     } else {
-      sendPlayerCommand('play', 'PUT');
+      if ((currentSong && currentSong.is_playing)) {
+        sendPlayerCommand('pause', 'PUT');
+      } else {
+        sendPlayerCommand('play', 'PUT');
+      }
     }
   };
 
@@ -270,8 +273,6 @@ const App = () => {
     const seconds = Math.floor((timestamp_ms % 60000) / 1000);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
-
-  const expectedEnvValue = import.meta.env.VITE_PASSWORD;
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
