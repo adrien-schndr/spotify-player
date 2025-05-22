@@ -409,7 +409,7 @@ const App = () => {
 
           {/* ---------- 🖥️ CONSOLE OUTPUT ---------- */}
           {message && (
-            <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, bgcolor: 'info.dark', color: '#FFFFFF'}}>
+            <Box sx={{ mt: 2, p: 1.5, borderRadius: 6, bgcolor: 'background.default', color: '#FFFFFF'}}>
               {message}
             </Box>
           )}
