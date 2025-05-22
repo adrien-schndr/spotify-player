@@ -1,13 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
+import { styled } from '@mui/material/styles';
 
 import {
-  Button,
   Box,
   Typography,
   CircularProgress,
   ThemeProvider,
   createTheme,
   CssBaseline,
+  LinearProgress,
+  IconButton,
+  Stack,
+  Fab,
+  linearProgressClasses 
 } from '@mui/material';
 import {
   PlayArrow,
@@ -20,25 +25,25 @@ const spotifyM3Theme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#1DB954',
+      main: '#E1B7F5',
     },
     secondary: {
       main: '#BB86FC',
     },
     background: {
-      default: '#121212',
-      paper: '#1E1E1E',
+      default: '#161217',
+      paper: '#221E24',
     },
     text: {
-      primary: '#FFFFFF',
-      secondary: '#B3B3B3',
+      primary: '#E1B7F5',
+      secondary: '#745186',
     },
   },
   typography: {
     fontFamily: 'Inter, sans-serif',
     h4: {
       fontWeight: 700,
-      color: '#1DB954',
+      color: '#E1B7F5',
     },
     h5: {
       fontWeight: 600,
@@ -239,6 +244,30 @@ const App = () => {
     }
   };
 
+  const progressText = (timestamp_ms: number) => {
+    const minutes = Math.floor(timestamp_ms / 60000);
+    const seconds = Math.floor((timestamp_ms % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
+  height: 15,
+  borderRadius: 10,
+  [`&.${linearProgressClasses.colorPrimary}`]: {
+    backgroundColor: '#5C396C',
+    ...theme.applyStyles('dark', {
+      backgroundColor: '#5C396C',
+    }),
+  },
+  [`& .${linearProgressClasses.bar}`]: {
+    borderRadius: 10,
+    backgroundColor: 'primary',
+    ...theme.applyStyles('dark', {
+      backgroundColor: 'primary',
+    }),
+  },
+}));
+
   return (
     <ThemeProvider theme={spotifyM3Theme}>
       <CssBaseline />
@@ -258,19 +287,21 @@ const App = () => {
         <Box
           sx={{
             bgcolor: 'background.paper',
-            p: 4,
-            borderRadius: 3,
+            p: { xs: 2, sm: 3 },
+            borderRadius: 10,
             boxShadow: 3,
-            maxWidth: 'md',
+            maxWidth: { xs: '100%', sm: '700px' },
             width: '100%',
             textAlign: 'center',
             border: '1px solid',
             borderColor: 'divider',
+            boxShadow: '0 0 15px rgba(94,56,106, 0.5)',
+            transition: 'box-shadow 0.3s ease',
+            '&:hover': {
+              boxShadow: '0 0 30px rgba(94,56,106, 0.7)',
+            },
           }}
         >
-          <Typography variant="h4" component="h1" gutterBottom>
-            Spotify Playback Control
-          </Typography>
 
           {isAuthLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', py: 4 }}>
@@ -290,29 +321,50 @@ const App = () => {
                   {/* --------- ℹ️ PLAYBACK BUTTONS ---------- */}
                   <Box sx={{ mb: 3 }}>
                     {currentSong?.item ? (
-                      <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
-                        <Typography variant="h6" sx={{ mt: 1, color: 'primary.main' }}>
-                          {currentSong.item.name}
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                          {currentSong.item.artists.map((artist: any) => artist.name).join(', ')}
-                        </Typography>
-                        {currentSong.item.album.images && currentSong.item.album.images.length > 0 && (
-                          <Box
+                      <Box
+                        sx={{
+                          p: { xs: 1, sm: 3 },
+                          bgcolor: 'background.default',
+                          borderRadius: 6,
+                          display: 'flex',
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          alignItems: 'center',
+                          justifyContent: { xs: 'center', sm: 'flex-start' },
+                          gap: { xs: 0.5, sm: 2 },
+                        }}
+                      >
+                        <Box
                             component="img"
-                            src={currentSong.item.album.images[0].url}
-                            alt={currentSong.item.album.name}
+                            src={currentSong.item.album.images && currentSong.item.album.images.length > 0 ? (currentSong.item.album.images[0].url) : "/public/placeholder.svg"}
+                            alt={currentSong.item.album.images && currentSong.item.album.images.length > 0 ? (currentSong.item.album.name) : currentSong.item.name}
                             sx={{
-                              width: 128,
-                              height: 128,
-                              borderRadius: 2,
-                              mx: 'auto',
-                              mt: 2,
+                              width: { xs: '95%', sm: 128 },
+                              minWidth: { xs: 'unset', sm: '8rem' },
+                              maxWidth: { xs: 'unset', sm: '8rem' },
+                              height: { xs: 'auto', sm: 128 },
+                              borderRadius: 4,
                               boxShadow: 2,
+                              flexShrink: 0,
+                              mx: { xs: 'auto', sm: 0 },
+                              mt: { xs: 2, sm: 0 },
+                              mb: { xs: 0.5, sm: 0 },
                             }}
-                            onError={(e: any) => { e.target.src = 'https://placehold.co/128x128/374151/9CA3AF?text=No+Image'; }}
                           />
-                        )}
+                        <Box
+                          sx={{
+                            p: { xs: 1, sm: 2 },
+                            textAlign: { xs: 'center', sm: 'left' },
+                            flexGrow: 1,
+                            width: { xs: '100%', sm: 'auto' },
+                          }}
+                        >
+                          <Typography variant="h6" sx={{ mt: 1, color: 'primary.main', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                            {currentSong.item.name}
+                          </Typography>
+                          <Typography variant="body1" sx={{ color: 'text.secondary', fontSize: { xs: '0.95rem', sm: '1.125rem' } }}>
+                            {currentSong.item.artists.map((artist: any) => artist.name).join(', ')}
+                          </Typography>
+                        </Box>
                       </Box>
                     ) : (
                       <Typography variant="body1" sx={{ color: 'text.secondary' }}>
@@ -320,39 +372,37 @@ const App = () => {
                       </Typography>
                     )}
                   </Box>
-
+                  <Box sx={{ mb: 3 }}>
+                    <BorderLinearProgress variant="determinate" value={currentSong?.progress_ms / currentSong?.item.duration_ms * 100} color="secondary"/>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1}}>
+                    <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
+                      {isLoading ? '' : `${progressText(currentSong?.progress_ms)}`}
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
+                      {isLoading ? 'Loading song information...' : `/`}
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
+                      {isLoading ? '' : `${progressText(currentSong?.item.duration_ms)}`}
+                    </Typography>
+                  </Box>
                   {/* ---------- 🎛️ PLAYBACK BUTTONS ---------- */}
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 3 }}>
-                    <Button
-                      variant="contained"
-                      onClick={handlePrevious}
-                      disabled={isLoading}
-                      startIcon={<SkipPrevious />}
-                      color="secondary"
-                    >
-                      Previous
-                    </Button>
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                      <IconButton aria-label="Previous" size="large" onClick={handlePrevious} disabled={isLoading} color="secondary">
+                        <SkipPrevious fontSize="inherit" />
+                      </IconButton>
 
-                    <Button
-                      variant="contained"
-                      onClick={handlePlayPauseToggle}
-                      disabled={isLoading || !currentSong}
-                      color={currentSong?.is_playing ? 'error' : 'primary'}
-                      startIcon={currentSong?.is_playing ? <Pause /> : <PlayArrow />}
-                    >
-                      {currentSong?.is_playing ? 'Pause' : 'Play'}
-                    </Button>
+                      <Fab aria-label={currentSong?.is_playing ? 'Pause' : 'Play'} size="large" onClick={handlePlayPauseToggle} disabled={isLoading || !currentSong} color={currentSong?.is_playing ? 'secondary' : 'primary'}>
+                        {currentSong?.is_playing ? <Pause fontSize="large" /> : <PlayArrow fontSize="large" />}
+                      </Fab>
 
-                    <Button
-                      variant="contained"
-                      onClick={handleNext}
-                      disabled={isLoading}
-                      endIcon={<SkipNext />}
-                      color="secondary"
-                    >
-                      Next
-                    </Button>
+                      <IconButton aria-label="Next" size="large" onClick={handleNext} disabled={isLoading} color="secondary">
+                        <SkipNext />
+                      </IconButton>
+                    </Stack>
                   </Box>
+                    
                 </>
               )}
             </>
