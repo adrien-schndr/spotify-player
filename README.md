@@ -1,3 +1,4 @@
+![Player illustration](/public/illustration.png)
 # Spotify Playback Controller
 A sleek and modern web application built with React and Material-UI (Material Design 3) that allows you to control your Spotify playback (pause, play, skip previous, skip next) and display the currently playing song. This project leverages a secure serverless function on Val Town to handle Spotify API authentication.
 ## ✨ Features
