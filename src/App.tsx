@@ -394,7 +394,7 @@ const App = () => {
                             width: { xs: '100%', sm: 'auto' },
                           }}
                         >
-                          <Link href={currentSong.item.album.external_urls.spotify} underline="hover" variant="h6" sx={{ mt: 1, color: 'primary.main', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                          <Link href={currentSong.item.album.external_urls.spotify} underline="hover" variant="h6" sx={{ mt: 1, color: 'primary.main', fontSize: { xs: '1.1rem', sm: '1.375rem' } }}>
                             {currentSong.item.name}
                           </Link>
                           <Typography

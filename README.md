@@ -1,5 +1,5 @@
 ![Player illustration](/public/illustration.png)
-# Spotify Playback Controller
+# Spotify Playback Controller [- try on my website](https://adrien.schndr.pro/spotify-player/)
 A sleek and modern web application built with React and Material-UI (Material Design 3) that allows you to control your Spotify playback (pause, play, skip previous, skip next) and display the currently playing song. This project leverages a secure serverless function on Val Town to handle Spotify API authentication.
 ## ✨ Features
 - **Display Current Song:** Shows the name, artist(s), and album art of the track currently playing on your active Spotify device.
