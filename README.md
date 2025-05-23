@@ -1,5 +1,5 @@
 ![Player illustration](/public/illustration.png)
-# Spotify Playback Controller [- try on my website](https://adrien.schndr.pro/spotify-player/)
+# Spotify Playback Controller [- try on my website](https://mel.schndr.pro/spotify-player/)
 A sleek and modern web application built with React and Material-UI (Material Design 3) that allows you to control your Spotify playback (pause, play, skip previous, skip next) and display the currently playing song. This project leverages a secure serverless function on Val Town to handle Spotify API authentication.
 ## ✨ Features
 - **Display Current Song:** Shows the name, artist(s), and album art of the track currently playing on your active Spotify device.
@@ -48,7 +48,7 @@ This Val Town function will securely retrieve your Spotify access token using yo
     - Go to Val Town and log in.
     - Click on "New Val".
 2. **Paste Backend Code:**
-    - Copy the code from the [web.tsx](https://github.com/adrien-schndr/spotify-player/blob/main/src/web.tsx) file.
+    - Copy the code from the [web.tsx](https://github.com/melinee-schndr/spotify-player/blob/main/src/web.tsx) file.
     - Paste it into your new Val.
 3. **Set Val Type to HTTP:**
     - In the Val Town dashboard for this Val, ensure its type is set to **HTTP**.
@@ -69,7 +69,7 @@ This is your React application that will interact with your Val Town backend and
 
 1. **Clone the Repository (or create a new project):**
     ```sh
-    git clone https://github.com/adrien-schndr/spotify-player.git
+    git clone https://github.com/melinee-schndr/spotify-player.git
     cd spotify-player
     ```
 2. **Install dependencies:**
