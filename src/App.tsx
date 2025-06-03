@@ -13,7 +13,13 @@ import {
   Fab,
   TextField,
   Link,
-  Slider
+  Modal,
+  Slider,
+  Button,
+  FormControl,
+  RadioGroup,
+  FormControlLabel,
+  Radio
 } from '@mui/material';
 import {
   PlayArrow,
@@ -24,7 +30,27 @@ import {
   Shuffle,
   Repeat,
   RepeatOne,
+  DevicesOther,
+  Close,
+  VolumeOff,
+  VolumeUp,
 } from '@mui/icons-material';
+
+const modalStyle = {
+  position: 'absolute' as 'absolute',
+  top: '45%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 400,
+  bgcolor: 'background.paper',
+  borderRadius: 8,
+  boxShadow: 24,
+  p: 4,
+  display: 'flex',
+  flexDirection: 'column',
+  maxHeight: '80vh',
+  overflowY: 'auto' as 'auto',
+};
 
 const spotifyM3Theme = createTheme({
   palette: {
@@ -88,17 +114,24 @@ const spotifyM3Theme = createTheme({
 const App = () => {
   const [accessToken, setAccessToken] = useState<string>('');
   const [message, setMessage] = useState<string>('');
+  const [devicesList, setDevicesList] = useState<any>(null);
   const [currentSong, setCurrentSong] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [inputValue, setInputValue] = useState<string>('');
   const [isMatchFound, setIsMatchFound] = useState<boolean>(false);
   const expectedEnvValue = import.meta.env.VITE_PASSWORD;
   const isSecured = (undefined !== expectedEnvValue);
+  const [deviceMenuOpen, setDeviceMenuOpen] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState<any>(null);
+  const [beforeMuteValue, setBeforeMuteValue] = useState<number>(0);
 
-  const [sliderValue, setSliderValue] = useState(0);
+  const [positionValue, setPositionValue] = useState(0);
+  const [volumeValue, setVolumeValue] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [_actualPlaybackPosition, setActualPlaybackPosition] = useState(0);
+  const [_actualVolumePosition, setActualVolumePosition] = useState(0);
 
   const pollingIntervalRef = useRef<number | null>(null);
 
@@ -174,8 +207,10 @@ const App = () => {
       }
 
       if (!isDragging) {
-          setSliderValue(data.progress_ms);
+          setPositionValue(data.progress_ms);
           setActualPlaybackPosition(data.progress_ms);
+          setVolumeValue(data.device.volume_percent);
+          setActualVolumePosition(data.device.volume_percent);
       }
 
     } catch (error: any) {
@@ -190,7 +225,41 @@ const App = () => {
     }
   };
 
-  const sendPlayerCommand = async (endpoint: string, method: 'PUT' | 'POST') => {
+  const fetchDevices = async () => {
+    if (!accessToken) {
+      
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      setMessage('> ❌ ERROR: Access token is not available. Please obtain it first.');
+      return;
+    }
+    try {
+      const response = await fetch('https://api.spotify.com/v1/me/player/devices', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      if (response.status === 200 ) {
+        const data = await response.json();
+        setDevicesList(data);
+      }
+      
+    } catch (error: any) {
+      console.error('> ❌ ERROR: Failed to fetch current playing song:', error);
+      setMessage(`> ❌ ERROR: Failed to fetch devices list: ${error.message}`);
+
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    } finally {
+    }
+  }
+
+  const sendPlayerCommand = async (endpoint: string, method: 'PUT' | 'POST', data:any=null) => {
     if (!accessToken) {
       setMessage('> ❌ ERROR: Access token is not available. Cannot send command.');
       return;
@@ -198,12 +267,16 @@ const App = () => {
     setIsLoading(true);
     setMessage(`> ⏳ LOADING: Sending command to Spotify player...`);
     try {
-      const response = await fetch(`https://api.spotify.com/v1/me/player/${endpoint}`, {
+      const options = {
         method: method,
         headers: {
           'Authorization': `Bearer ${accessToken}`
-        }
-      });
+        },
+        body: data
+      }
+      console.log(options)
+
+      const response = await fetch(`https://api.spotify.com/v1/me/player/${endpoint}`, options);
 
       if (response.status === 204) {
         setMessage(`> ✅ SUCCESS: Command "${endpoint}" sent successfully!`);
@@ -229,15 +302,30 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    if (devicesList && devicesList.devices.length > 0) {
+      const activeDevice = devicesList.devices.find((device : any) => device.is_active);
+      if (activeDevice) {
+        setSelectedDevice(activeDevice.id);
+      } else {
+        // Fallback: If no active device, you might want to select the first one
+        setSelectedDevice(devicesList.devices[0].id);
+      }
+    }
+  }, [devicesList]); // This effect runs whenever devicesList changes
+
+  useEffect(() => {
     if (accessToken) {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
       }
 
       fetchCurrentPlaying();
+      fetchDevices();
 
       pollingIntervalRef.current = setInterval(() => {
         fetchCurrentPlaying();
+        fetchDevices();
+        console.log(devicesList, usedDevice())
       }, 1000);
     } else {
       if (pollingIntervalRef.current) {
@@ -245,6 +333,7 @@ const App = () => {
         pollingIntervalRef.current = null;
       }
       setCurrentSong(null);
+      setDevicesList(null); 
     }
 
     return () => {
@@ -254,6 +343,18 @@ const App = () => {
       }
     };
   }, [accessToken]);
+
+  const handleOpen = () => {
+    setDeviceMenuOpen(true);
+  };
+
+  const handleClose = () => {
+    setDeviceMenuOpen(false);
+  };
+
+  const usedDevice = () => {
+    return devicesList.devices.find((device:any) => device.is_active)
+  }
 
   const handleNext = () => {
     if (!isMatchFound && isSecured) {
@@ -265,7 +366,7 @@ const App = () => {
   const handlePrevious = () => {
     if (!isMatchFound && isSecured) {
       setMessage("> ❌ ERROR: You are not authenticated.");
-      return;
+      return;null
     }
     sendPlayerCommand('previous', 'POST');
   };
@@ -310,6 +411,24 @@ const App = () => {
       }
     }
   };
+  const handleMute = () => {
+    if (!isMatchFound && isSecured) {
+      setMessage("> ❌ ERROR: You are not authenticated.");
+      return;
+    }
+    if (currentSong.device.supports_volume) {
+      if (isMuted) {
+        setVolumeValue(beforeMuteValue);
+        sendPlayerCommand(`volume?volume_percent=${beforeMuteValue}`, 'PUT');
+        setIsMuted(false)
+      } else {
+        setBeforeMuteValue(volumeValue);
+        setVolumeValue(0);
+        sendPlayerCommand(`volume?volume_percent=${0}`, 'PUT');
+        setIsMuted(true)
+      }
+    }
+  };
 
   const progressText = (timestamp_ms: number) => {
     const minutes = Math.floor(timestamp_ms / 60000);
@@ -317,17 +436,17 @@ const App = () => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
 
-  const handleSliderChange = (_event: any, newValue: number) => {
+  const handlePositionChange = (_event: any, newValue: number) => {
     if (!isMatchFound && isSecured) {
       setMessage("> ❌ ERROR: You are not authenticated.");
       return;
     } else {  
-      setSliderValue(newValue);
+      setPositionValue(newValue);
       setIsDragging(true);
     }
   };
 
-  const handleSliderChangeCommitted = (_event: any,newValue: number) => {
+  const handlePositionChangeCommitted = (_event: any,newValue: number) => {
     if (!isMatchFound && isSecured) {
       setMessage("> ❌ ERROR: You are not authenticated.");
       return;
@@ -335,14 +454,52 @@ const App = () => {
       setActualPlaybackPosition(newValue);
       setIsDragging(false);
       if ((currentSong)) {
-        sendPlayerCommand(`seek?position_ms=${newValue}`, 'PUT');
+          sendPlayerCommand(`seek?position_ms=${newValue}`, 'PUT');
       }
+    }  
+  };
+
+    const handleVolumeChange = (_event: any, newValue: number) => {
+    if (!isMatchFound && isSecured) {
+      setMessage("> ❌ ERROR: You are not authenticated.");
+      return;
+    } else if (currentSong.device.supports_volume) {  
+      setVolumeValue(newValue);
+      setIsDragging(true);
     }
-    
-}
+  };
+
+  const handleVolumeChangeCommitted = (_event: any,newValue: number) => {
+    if (!isMatchFound && isSecured) {
+      setMessage("> ❌ ERROR: You are not authenticated.");
+      return;
+    } else if (currentSong.device.supports_volume) {
+      setActualVolumePosition(newValue);
+      setIsDragging(false);
+      if ((currentSong)) {
+          sendPlayerCommand(`volume?volume_percent=${newValue}`, 'PUT');
+      }
+    }  
+  };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
+  };
+
+
+  const handleDeviceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isMatchFound && isSecured) {
+      setMessage("> ❌ ERROR: You are not authenticated.");
+      return;
+    } else {
+      setSelectedDevice(event.target.value);
+      sendPlayerCommand("", "PUT", JSON.stringify({"device_ids": [`${event.target.value}`]}))
+      const newlySelectedDeviceId = event.target.value;
+      const newlySelectedDevice = devicesList?.devices.find((device:any) => device.id === newlySelectedDeviceId);
+      if (newlySelectedDevice) {
+        console.log("Selected Device:", newlySelectedDevice);
+      }
+    }
   };
 
   const handleCheck = () => {
@@ -478,10 +635,10 @@ const App = () => {
                   <Slider 
                     min={0}
                     max={currentSong?.item.duration_ms}
-                    value={sliderValue} 
+                    value={positionValue} 
                     aria-label="Duration" 
-                    onChange={handleSliderChange}
-                    onChangeCommitted={handleSliderChangeCommitted}
+                    onChange={handlePositionChange}
+                    onChangeCommitted={handlePositionChangeCommitted}
                     color="secondary"
                   />
 
@@ -503,7 +660,7 @@ const App = () => {
                         <Shuffle fontSize="inherit" />
                       </IconButton>
 
-                      <IconButton aria-label="Previous" size="large" onClick={handlePrevious} disabled={isLoading} color="secondary">
+                      <IconButton aria-label="Previous" size="large" onClick={handlePrevious} disabled={isLoading} color="info">
                         <SkipPrevious fontSize="inherit" />
                       </IconButton>
 
@@ -511,7 +668,7 @@ const App = () => {
                         {currentSong?.is_playing ? <Pause fontSize="large" /> : <PlayArrow fontSize="large" />}
                       </Fab>
 
-                      <IconButton aria-label="Next" size="large" onClick={handleNext} disabled={isLoading} color="secondary">
+                      <IconButton aria-label="Next" size="large" onClick={handleNext} disabled={isLoading} color="info">
                         <SkipNext />
                       </IconButton>
 
@@ -531,6 +688,94 @@ const App = () => {
                         </IconButton>
                       ))}
                     </Stack>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 3 }}>
+                    <IconButton 
+                      aria-label="Shuffle" 
+                      size="medium" 
+                      onClick={handleOpen} 
+                      disabled={isLoading} color="secondary"
+                    >
+                      <DevicesOther fontSize="medium" />
+                    </IconButton>
+
+                    <Modal
+                      open={deviceMenuOpen}
+                      onClose={handleClose}
+                      aria-labelledby="modal-title"
+                      aria-describedby="modal-description"
+                    >
+                      <Box sx={modalStyle}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            mb: 2,
+                          }}
+                        >
+                          <Typography id="modal-title" variant="h6" component="h2">
+                            Available devices
+                          </Typography>
+                          <IconButton
+                            aria-label="close"
+                            onClick={handleClose}
+                            sx={{
+                              color: (theme) => theme.palette.grey[500],
+                            }}
+                          >
+                            <Close />
+                          </IconButton>
+                        </Box>
+
+                        <FormControl>
+                          <RadioGroup
+                            aria-labelledby="device-selection-radio-buttons-group"
+                            name="device-selection-group"
+                            value={selectedDevice}
+                            onChange={handleDeviceChange}
+                          >
+                            {devicesList ? (
+                              devicesList.devices.map((device: any, _index: number) => (
+                                <Box sx={{ border: '1px dashed grey', p: 2, mt: 2, borderRadius: 10 }} key={device.id}>
+                                  <FormControlLabel value={device.id} control={<Radio />} label={device.name} />
+                                </Box>
+                              ))
+                            ) : (
+                              <p>Loading devices...</p>
+                            )}
+                          </RadioGroup>
+                        </FormControl>
+
+                        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                          <Button onClick={handleClose} sx={{ borderRadius: '8px' }}>
+                            Close
+                          </Button>
+                        </Box>
+                      </Box>
+                    </Modal>
+
+                    <IconButton 
+                      aria-label="Mute" 
+                      size="medium" 
+                      onClick={handleMute} 
+                      disabled={isLoading} color={isMuted ? "secondary" : "info"}
+                    >
+                      {isMuted ? ((<VolumeOff fontSize="medium" />)) : (<VolumeUp fontSize="medium" />)}
+                      
+                    </IconButton>
+
+                    <Slider
+                      min={0}
+                      max={100}
+                      value={volumeValue} 
+                      aria-label="Duration" 
+                      onChange={handleVolumeChange}
+                      onChangeCommitted={handleVolumeChangeCommitted}
+                      color="secondary"
+                      disabled={currentSong?.device.supports_volume ? false : true}
+                    />
                   </Box>
                     
                 </>
