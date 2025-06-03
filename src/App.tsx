@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
-import { styled } from '@mui/material/styles';
 
 import {
   Box,
@@ -9,13 +8,12 @@ import {
   ThemeProvider,
   createTheme,
   CssBaseline,
-  LinearProgress,
   IconButton,
   Stack,
   Fab,
-  linearProgressClasses,
   TextField,
-  Link
+  Link,
+  Slider
 } from '@mui/material';
 import {
   PlayArrow,
@@ -98,6 +96,10 @@ const App = () => {
   const expectedEnvValue = import.meta.env.VITE_PASSWORD;
   const isSecured = (undefined !== expectedEnvValue);
 
+  const [sliderValue, setSliderValue] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [_actualPlaybackPosition, setActualPlaybackPosition] = useState(0);
+
   const pollingIntervalRef = useRef<number | null>(null);
 
   const fetchAccessToken = async () => {
@@ -170,6 +172,12 @@ const App = () => {
       if (message === '> ℹ️ INFO: No song is currently playing.' || message === '> ⏳ LOADING: Fetching current song...') {
         setMessage('');
       }
+
+      if (!isDragging) {
+          setSliderValue(data.progress_ms);
+          setActualPlaybackPosition(data.progress_ms);
+      }
+
     } catch (error: any) {
       console.error('> ❌ ERROR: Failed to fetch current playing song:', error);
       setMessage(`> ❌ ERROR: Failed to fetch current song: ${error.message}. Make sure your token is valid and a song is playing on an active device.`);
@@ -309,6 +317,30 @@ const App = () => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
 
+  const handleSliderChange = (_event: any, newValue: number) => {
+    if (!isMatchFound && isSecured) {
+      setMessage("> ❌ ERROR: You are not authenticated.");
+      return;
+    } else {  
+      setSliderValue(newValue);
+      setIsDragging(true);
+    }
+  };
+
+  const handleSliderChangeCommitted = (_event: any,newValue: number) => {
+    if (!isMatchFound && isSecured) {
+      setMessage("> ❌ ERROR: You are not authenticated.");
+      return;
+    } else {
+      setActualPlaybackPosition(newValue);
+      setIsDragging(false);
+      if ((currentSong)) {
+        sendPlayerCommand(`seek?position_ms=${newValue}`, 'PUT');
+      }
+    }
+    
+}
+
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
   };
@@ -322,24 +354,6 @@ const App = () => {
       setIsMatchFound(false);
     }
   };
-
-  const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
-  height: 15,
-  borderRadius: 10,
-  [`&.${linearProgressClasses.colorPrimary}`]: {
-    backgroundColor: '#5C396C',
-    ...theme.applyStyles('dark', {
-      backgroundColor: '#5C396C',
-    }),
-  },
-  [`& .${linearProgressClasses.bar}`]: {
-    borderRadius: 10,
-    backgroundColor: 'primary',
-    ...theme.applyStyles('dark', {
-      backgroundColor: 'primary',
-    }),
-  },
-}));
 
   return (
     <ThemeProvider theme={spotifyM3Theme}>
@@ -460,9 +474,17 @@ const App = () => {
                       </Typography>
                     )}
                   </Box>
-                  <Box sx={{ mb: 3 }}>
-                    <BorderLinearProgress variant="determinate" value={currentSong?.progress_ms / currentSong?.item.duration_ms * 100} color="secondary"/>
-                  </Box>
+
+                  <Slider 
+                    min={0}
+                    max={currentSong?.item.duration_ms}
+                    value={sliderValue} 
+                    aria-label="Duration" 
+                    onChange={handleSliderChange}
+                    onChangeCommitted={handleSliderChangeCommitted}
+                    color="secondary"
+                  />
+
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1}}>
                     <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
                       {progressText(currentSong?.progress_ms)}
