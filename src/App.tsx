@@ -23,6 +23,9 @@ import {
   SkipPrevious,
   SkipNext,
   Send,
+  Shuffle,
+  Repeat,
+  RepeatOne,
 } from '@mui/icons-material';
 
 const spotifyM3Theme = createTheme({
@@ -33,6 +36,9 @@ const spotifyM3Theme = createTheme({
     },
     secondary: {
       main: '#BB86FC',
+    },
+    info: {
+      main: '#FFFFFF'
     },
     background: {
       default: '#161217',
@@ -138,7 +144,7 @@ const App = () => {
     }
 
     try {
-      const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+      const response = await fetch('https://api.spotify.com/v1/me/player', {
         headers: {
           'Authorization': `Bearer ${accessToken}`
         }
@@ -254,6 +260,35 @@ const App = () => {
       return;
     }
     sendPlayerCommand('previous', 'POST');
+  };
+  const handleShuffle = () => {
+    if (!isMatchFound && isSecured) {
+      setMessage("> ❌ ERROR: You are not authenticated.");
+      return;
+    }
+    else {
+      if (currentSong && currentSong.shuffle_state) {
+        sendPlayerCommand('shuffle?state=false', 'PUT');
+      } else {
+        sendPlayerCommand('shuffle?state=true', 'PUT');
+      }
+    }
+  };
+  const handleRepeat = () => {
+    if (!isMatchFound && isSecured) {
+      setMessage("> ❌ ERROR: You are not authenticated.");
+      return;
+    }
+    else {
+      console.log(currentSong.repeat_state);
+      if (currentSong && currentSong.repeat_state == "off") {
+        sendPlayerCommand('repeat?state=context', 'PUT');
+      } else if (currentSong && currentSong.repeat_state == "context") {
+        sendPlayerCommand('repeat?state=track', 'PUT');
+      } else {
+        sendPlayerCommand('repeat?state=off', 'PUT');
+      }
+    }
   };
   const handlePlayPauseToggle = () => {
     if (!isMatchFound && isSecured) {
@@ -413,7 +448,6 @@ const App = () => {
                                 >
                                   {artist.name}
                                 </Link>
-                                {/* Add a comma and space only if it's not the last artist */}
                                 {index < currentSong.item.artists.length - 1 && ', '}
                               </React.Fragment>
                             ))}
@@ -431,18 +465,22 @@ const App = () => {
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1}}>
                     <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
-                      {isLoading ? '' : `${progressText(currentSong?.progress_ms)}`}
+                      {progressText(currentSong?.progress_ms)}
                     </Typography>
                     <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
-                      {isLoading ? '> ⏳ LOADING: Fetching song information...' : `/`}
+                      {`/`}
                     </Typography>
                     <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
-                      {isLoading ? '' : `${progressText(currentSong?.item.duration_ms)}`}
+                      {progressText(currentSong?.item.duration_ms)}
                     </Typography>
                   </Box>
                   {/* ---------- 🎛️ PLAYBACK BUTTONS ---------- */}
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 3 }}>
                     <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                      <IconButton aria-label="Shuffle" size="medium" onClick={handleShuffle} disabled={isLoading} color={currentSong?.shuffle_state ? 'secondary' : 'info' }>
+                        <Shuffle fontSize="inherit" />
+                      </IconButton>
+
                       <IconButton aria-label="Previous" size="large" onClick={handlePrevious} disabled={isLoading} color="secondary">
                         <SkipPrevious fontSize="inherit" />
                       </IconButton>
@@ -454,6 +492,22 @@ const App = () => {
                       <IconButton aria-label="Next" size="large" onClick={handleNext} disabled={isLoading} color="secondary">
                         <SkipNext />
                       </IconButton>
+
+                      
+                      {currentSong?.repeat_state == "off" ? (
+                        <IconButton aria-label="Shuffle" size="medium" onClick={handleRepeat} disabled={isLoading} color="info">
+                          <Repeat fontSize="medium" />
+                        </IconButton>
+
+                      ) : (currentSong?.repeat_state == "track" ? (
+                        <IconButton aria-label="Shuffle" size="medium" onClick={handleRepeat} disabled={isLoading} color="secondary">
+                          <RepeatOne fontSize="medium" />
+                        </IconButton>
+                      ): (
+                        <IconButton aria-label="Shuffle" size="medium" onClick={handleRepeat} disabled={isLoading} color="secondary">
+                          <Repeat fontSize="medium" />
+                        </IconButton>
+                      ))}
                     </Stack>
                   </Box>
                     
